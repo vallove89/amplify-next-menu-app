@@ -7,11 +7,75 @@ specifies that any user authenticated via an API key can "create", "read",
 "update", and "delete" any "Todo" records.
 =========================================================================*/
 const schema = a.schema({
-  Todo: a
+  Price: a
+    .customType({
+      label: a.string(),
+      price: a.float(),
+  }),
+  Item: a
     .model({
-      content: a.string(),
+      id: a.id().required(),
+      userId: a.id().required(),
+      name: a.string().required(),
+      description: a.string(),
+      imageUrl: a.string(),
+      priceOption: a.ref('Price').array(),
+      category: a.enum(['STARTERS', 'ENTREES', 'SIDES', 'DESSERTS', 'DRINKS_NON_ALCOHOLIC', 'DRINKS_ALCOHOLIC']),
+      submenus: a.hasMany('SubmenuItem','itemId'),
+  })
+  .authorization((allow) => [
+      allow.publicApiKey().to(['read']),
+      allow.owner(),
+  ]),
+  Submenu: a
+    .model({
+        id: a.id().required(),
+        userId: a.id().required(),
+        title: a.string().required(),
+        description: a.string(),
+        imageUrl: a.string(),
+        menus: a.hasMany("MenuSubmenu","submenuId"),
+        submenus: a.hasMany("SubmenuItem","submenuId"),
     })
-    .authorization((allow) => [allow.publicApiKey()]),
+    .authorization((allow) => [
+        allow.publicApiKey().to(['read']),
+        allow.owner(),
+    ]),
+  Menu: a
+    .model({
+        id: a.id().required(),
+        userId: a.id().required(),
+        name: a.string().required(),
+        description: a.string(),
+        imageUrl: a.string(),
+        submenus: a.hasMany("MenuSubmenu", "menuId")
+    })
+    .authorization((allow) => [
+        allow.publicApiKey().to(['read']),
+        allow.owner(),
+    ]),
+  MenuSubmenu: a
+    .model({
+        menuId: a.id().required(),
+        submenuId: a.id().required(),
+        menu: a.belongsTo("Menu","menuId"),
+        submenu: a.belongsTo("Submenu","submenuId")
+    })
+    .authorization((allow) => [
+        allow.publicApiKey().to(['read']),
+        allow.owner(),
+    ]),
+  SubmenuItem: a
+    .model({
+        submenuId: a.id().required(),
+        itemId: a.id().required(),
+        submenu: a.belongsTo("Submenu","submenuId"),
+        item: a.belongsTo("Item","itemId")
+    })
+    .authorization((allow) => [
+        allow.publicApiKey().to(['read']),
+        allow.owner(),
+    ]),
 });
 
 export type Schema = ClientSchema<typeof schema>;
